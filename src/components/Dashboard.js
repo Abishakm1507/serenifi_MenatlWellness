@@ -224,6 +224,27 @@ const Dashboard = () => {
   const [completedTasks, setCompletedTasks] = useState([]);
   const [showNotification, setShowNotification] = useState(false);
 
+  const getTodayString = () => new Date().toISOString().split('T')[0];
+
+  const incrementStreakIfNotToday = () => {
+    try {
+      const today = getTodayString();
+      const lastMoodDate = localStorage.getItem('lastMoodDate');
+      let storedStreak = parseInt(localStorage.getItem('streak') || '0', 10) || 0;
+
+      if (lastMoodDate !== today) {
+        storedStreak = storedStreak + 1;
+        localStorage.setItem('streak', String(storedStreak));
+        localStorage.setItem('lastMoodDate', today);
+        setStreak(storedStreak);
+        return true;
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+    return false;
+  };
+
   const moods = [
     { emoji: '😊', text: 'Happy' },
     { emoji: '😌', text: 'Sad' },
@@ -244,9 +265,20 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (completedTasks.length === plans.length && plans.length > 0) {
-      setStreak(prevStreak => prevStreak + 1);
+      // reuse the same once-per-day guard so streak won't increment twice
+      incrementStreakIfNotToday();
     }
   }, [completedTasks, plans.length]);
+
+  // initialize streak from localStorage
+  useEffect(() => {
+    try {
+      const stored = parseInt(localStorage.getItem('streak') || '0', 10) || 0;
+      setStreak(stored);
+    } catch (e) {
+      // ignore
+    }
+  }, []);
 
   const toggleTask = (index) => {
     setCompletedTasks(prev => {
@@ -268,10 +300,14 @@ const Dashboard = () => {
 
   const handleMoodSubmit = () => {
     if (selectedMood !== null) {
+      // increment streak at most once per day when user submits mood
+      incrementStreakIfNotToday();
+
       setShowNotification(true);
       setTimeout(() => {
         setShowNotification(false);
       }, 3000);
+
       // Reset selected mood after submission
       setSelectedMood(null);
     }

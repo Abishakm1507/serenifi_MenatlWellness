@@ -117,7 +117,7 @@ const Chatbot = () => {
     const prompt = generateEmpatheticPrompt(input, mood);
 
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const response = await model.generateContent(prompt);
       const botMessage = response.response.text();
 
